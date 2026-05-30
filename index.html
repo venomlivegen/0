@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Venom Hub V2 - Premium Generator & Checker</title>
+    <style>
+        :root {
+            --neon-color: #ff0055;
+            --neon-glow: rgba(255, 0, 85, 0.6);
+            --bg-color: #040406;
+            --card-bg: rgba(13, 13, 17, 0.95);
+            --border-color: #3a1520;
+            --sidebar-width: 260px;
+            --success-color: #00ff66;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: white;
+            display: flex;
+            min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        /* --- CANLI MATRIX ARKA PLAN EFEKTİ --- */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            opacity: 0.15;
+            pointer-events: none;
+        }
+
+        /* --- SOL MENÜ (SIDEBAR) --- */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: rgba(8, 8, 11, 0.96);
+            border-right: 2px solid var(--border-color);
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            box-sizing: border-box;
+            position: fixed;
+            height: 100vh;
+            left: 0;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(20px);
+            box-shadow: 10px 0 30px rgba(0, 0, 0, 0.7);
+        }
+
+        .sidebar-brand {
+            font-size: 1.6rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-align: center;
+            color: #fff;
+            text-shadow: 0 0 10px var(--neon-color), 0 0 20px var(--neon-color);
+            padding-bottom: 20px;
+            border-bottom: 2px solid rgba(255, 0, 85, 0.2);
+        }
+
+        .sidebar-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .menu-item {
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 14px;
+            cursor: pointer;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-size: 12px;
+            color: #7e7e88;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .menu-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 0;
+            background: linear-gradient(90deg, rgba(255, 0, 85, 0.2), transparent);
+            transition: width 0.3s ease;
+        }
+
+        .menu-item:hover, .menu-item.active {
+            color: #fff;
+            background: rgba(255, 0, 85, 0.08);
+            border-color: var(--neon-color);
+            box-shadow: 0 0 20px rgba(255, 0, 85, 0.3);
+            transform: translateX(8px);
+        }
+
+        .menu-item:hover::before, .menu-item.active::before {
+            width: 100%;
+        }
+
+        /* --- ANA İÇERİK ALANI --- */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            box-sizing: border-box;
+            min-height: 100vh;
+            width: calc(100% - var(--sidebar-width));
+        }
+
+        .tab-content {
+            display: none;
+            width: 100%;
+            max-width: 560px;
+            animation: cubic-bezier(0.25, 1, 0.5, 1) 0.5s forwards;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation-name: slideUp;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Container Tasarımı */
+        .container {
+            background: var(--card-bg);
+            padding: 45px 40px;
+            border-radius: 28px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 30px rgba(255, 0, 85, 0.1);
+            width: 100%;
+            border: 1px solid var(--border-color);
+            text-align: center;
+            box-sizing: border-box;
+            backdrop-filter: blur(15px);
+            position: relative;
+        }
+
+        .container::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 10%;
+            width: 80%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--neon-color), transparent);
+        }
+
+        h1 {
+            font-size: 2.3rem;
+            margin-bottom: 5px;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            text-shadow: 0 0 10px var(--neon-glow), 0 0 30px var(--neon-color);
+        }
+
+        .subtitle {
+            font-size: 11px;
+            color: #5d5d6a;
+            text-transform: uppercase;
+            letter-spacing: 2.5px;
+            margin-bottom: 35px;
+            font-weight: 600;
+        }
+
+        /* Form Elemanları */
+        .input-group {
+            margin-bottom: 22px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 12px;
+            color: #8c8c9e;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 16px;
+            background: #0f0f14;
+            border: 1px solid #23232e;
+            border-radius: 14px;
+            color: white;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        textarea {
+            height: 160px;
+            resize: none;
+            font-family: 'Courier New', monospace;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--neon-color);
+            box-shadow: 0 0 15px rgba(255, 0, 85, 0.25), inset 0 2px 4px rgba(0,0,0,0.5);
+            background: #14141c;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 25px;
+            cursor: pointer;
+            color: #a5a5b4;
+            font-size: 14px;
+            user-select: none;
+            text-align: left;
+            font-weight: 500;
+        }
+
+        .checkbox-group input {
+            height: 20px;
+            width: 20px;
+            accent-color: var(--neon-color);
+            cursor: pointer;
+        }
+
+        .row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn-generate {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #ff0055, #a30030);
+            border: none;
+            border-radius: 14px;
+            color: white;
+            font-weight: 800;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 5px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow: 0 6px 20px rgba(255, 0, 85, 0.3);
+        }
+
+        .btn-generate:hover {
+            filter: brightness(1.15);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(255, 0, 85, 0.5);
+        }
+
+        #output {
+            margin-top: 25px;
+            background: #060609;
+            padding: 18px;
+            border-radius: 14px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            height: 180px;
+            overflow-y: auto;
+            text-align: left;
+            border: 1px solid #231217;
+            color: #ff4071;
+            white-space: pre-wrap;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.9);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .btn-action {
+            flex: 1;
+            background: #14141c;
+            color: #9090a2;
+            border: 1px solid #252533;
+            padding: 14px 15px;
+            margin-top: 18px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s ease;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-action:hover { background: var(--success-color); color: #000; border-color: var(--success-color); font-weight: 800; box-shadow: 0 0 15px rgba(0,255,102,0.3); }
+        .btn-clear:hover { background: #e02447; color: white; border-color: #e02447; box-shadow: 0 0 15px rgba(224,36,71,0.3); }
+
+        .telegram-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #0088cc, #006699);
+            color: #ffffff;
+            padding: 8px 18px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,136,204,0.3);
+        }
+        .telegram-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,136,204,0.5); }
+
+        /* --- İÇERİK ŞABLONLARI --- */
+        .info-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 25px 0;
+        }
+        .stat-box {
+            background: #0f0f14;
+            border: 1px solid #1f1f2a;
+            padding: 18px;
+            border-radius: 16px;
+            text-align: center;
+        }
+        .stat-box h3 { margin: 0 0 5px 0; color: var(--neon-color); font-size: 22px; font-weight: 800; }
+        .stat-box p { margin: 0; color: #6c6c7d; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .announcement {
+            background: rgba(255, 0, 85, 0.03);
+            border-left: 4px solid var(--neon-color);
+            padding: 18px;
+            text-align: left;
+            border-radius: 0 16px 16px 0;
+            margin-top: 20px;
+            border-top: 1px solid rgba(255,0,85,0.05);
+            border-bottom: 1px solid rgba(255,0,85,0.05);
+            border-right: 1px solid rgba(255,0,85,0.05);
+        }
+        .announcement h4 { margin: 0 0 6px 0; color: #fff; font-size: 15px; }
+        .announcement p { margin: 0; color: #9c9cae; font-size: 13px; line-height: 1.4; }
+
+        /* Shop Grid */
+        .shop-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 25px;
+        }
+        .shop-item {
+            background: #0f0f14;
+            border: 1px solid #1f1f2a;
+            padding: 18px 22px;
+            border-radius: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-align: left;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+        }
+        .shop-item:hover { 
+            border-color: var(--neon-color); 
+            box-shadow: 0 0 20px rgba(255, 0, 85, 0.15);
+            transform: translateY(-2px);
+            background: #14141c;
+        }
+        .shop-item .details h3 { margin: 0 0 4px 0; font-size: 16px; color: #fff; font-weight: 700; }
+        .shop-item .details p { margin: 0; font-size: 12px; color: #646475; }
+        .shop-item .price { color: var(--success-color); font-weight: 800; font-size: 17px; background: rgba(0, 255, 102, 0.08); padding: 6px 14px; border-radius: 10px; border: 1px solid rgba(0,255,102,0.15); }
+
+        /* --- ÖZEL SİBER PUNKK MODAL (UYANIK BOX) --- */
+        .v-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(4, 4, 6, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .v-modal.show { display: flex; opacity: 1; }
+        .v-modal-content {
+            background: #0e0e12;
+            border: 2px solid var(--neon-color);
+            padding: 40px;
+            border-radius: 24px;
+            max-width: 420px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 0 40px rgba(255, 0, 85, 0.3);
+            transform: scale(0.8);
+            transition: transform 0.3s ease;
+        }
+        .v-modal.show .v-modal-content { transform: scale(1); }
+        .v-modal-icon { font-size: 50px; color: var(--neon-color); margin-bottom: 15px; animation: pulse 1s infinite alternate; }
+        .v-modal-title { font-size: 22px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; color: white; }
+        .v-modal-text { color: #8c8c9e; font-size: 14px; line-height: 1.5; margin-bottom: 25px; }
+        .v-modal-btn { background: var(--neon-color); border: none; padding: 12px 30px; border-radius: 10px; color: white; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: 0.2s; }
+        .v-modal-btn:hover { filter: brightness(1.2); box-shadow: 0 0 15px var(--neon-glow); }
+
+        /* TOAST BİLDİRİM KUTUSU */
+        .toast {
+            position: fixed;
+            top: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--success-color);
+            color: black;
+            padding: 12px 25px;
+            border-radius: 50px;
+            font-weight: 800;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 5px 20px rgba(0,255,102,0.4);
+            z-index: 1100;
+            transition: top 0.4s ease;
+        }
+        .toast.show { top: 30px; }
+
+        /* --- MOBİL TASARIM --- */
+        @media (max-width: 768px) {
+            body { padding-bottom: 80px; }
+            .sidebar {
+                width: 100%;
+                height: 70px;
+                position: fixed;
+                top: auto;
+                bottom: 0;
+                left: 0;
+                border-right: none;
+                border-top: 2px solid var(--border-color);
+                padding: 0 5px;
+                flex-direction: row;
+                box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.8);
+                background: rgba(6, 6, 9, 0.98);
+            }
+            .sidebar-brand { display: none; }
+            .sidebar-menu { flex-direction: row; width: 100%; justify-content: space-around; gap: 4px; }
+            .menu-item { padding: 12px 6px; font-size: 9px; flex: 1; border-radius: 10px; border: none; background: transparent; letter-spacing: 0.5px; }
+            .menu-item:hover, .menu-item.active { transform: none; background: rgba(255, 0, 85, 0.12); color: var(--neon-color); }
+            .menu-item.active::after { content: ''; position: absolute; bottom: 2px; left: 35%; width: 30%; height: 3px; background: var(--neon-color); border-radius: 5px; }
+            .main-content { margin-left: 0; padding: 25px 12px; width: 100%; min-height: calc(100vh - 70px); }
+            .container { padding: 30px 18px; border-radius: 20px; }
+            h1 { font-size: 1.7rem; }
+            .row { flex-direction: column; gap: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- CANLI CANVAS MATRIX ARKA PLANI -->
+<canvas id="bg-canvas"></canvas>
+
+<!-- TOAST BİLDİRİMİ -->
+<div id="toastNotification" class="toast">Kopyalandı!</div>
+
+<!-- SİBER PUNKK MODAL DIALOG -->
+<div id="maintenanceModal" class="v-modal" onclick="closeModal(event)">
+    <div class="v-modal-content" onclick="event.stopPropagation()">
+        <div class="v-modal-icon">⚠️</div>
+        <div class="v-modal-title">Sistem Bakımda</div>
+        <div class="v-modal-text">Venom Checker altyapısı yeni API kapıları ve yüksek hız optimizasyonu sebebiyle kısa süreliğine bakımdadır.</div>
+        <button class="v-modal-btn" onclick="hideMaintenanceModal()">Anladım</button>
+    </div>
+</div>
+
+<!-- SIDEBAR / BOTTOM MENU -->
+<div class="sidebar">
+    <div class="sidebar-brand">Venom Hub</div>
+    <ul class="sidebar-menu">
+        <li class="menu-item active" onclick="switchTab('home', this)">Anasayfa</li>
+            <li class="menu-item" onclick="switchTab('buy', this)">CC Buy</li>
+        <li class="menu-item" onclick="switchTab('generator', this)">CC Gen</li>
+        <li class="menu-item" onclick="switchTab('checker', this)">CC Checker</li>
+    
+    </ul>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main-content">
+
+    <!-- ANASAYFA -->
+    <div id="home" class="tab-content active">
+        <div class="container">
+            <h1>Venom Dashboard</h1>
+            <div class="subtitle">Sistem Durumu ve Bilgiler</div>
+            
+            <div class="info-stats">
+                <div class="stat-box">
+                    <h3>AKTİF</h3>
+                    <p>Gen Algoritması</p>
+                </div>
+                <div class="stat-box">
+                    <h3>89.9%</h3>
+                    <p>Live Oranı</p>
+                </div>
+            </div>
+
+            <div class="announcement">
+                <h4>Duyuru!</h4>
+                <p>Datalarınız İstediğiniz Gate İle Güvenle Checklenir.</p>
+            </div>
+
+            <div class="announcement" style="margin-top: 15px;">
+                <h4>Resmi Destek Kanalı</h4>
+                <p style="margin-bottom: 12px;">Destek talepleri, soru ve önerileriniz için topluluğumuza giriş sağlayın.</p>
+                <a href="https://t.me/venomsh0" target="_blank" class="telegram-btn">Telegram Topluluğu</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- CC GENERATOR -->
+    <div id="generator" class="tab-content">
+        <div class="container">
+            <h1>CC GENERATOR</h1>
+            <div class="subtitle">Premium Luhn Algoritması</div>
+            
+            <div class="input-group">
+                <label>BIN NUMARASI</label>
+                <input type="text" id="bin" placeholder="6-12 Hane Girin (Örn: 450634)" maxlength="12">
+            </div>
+
+            <div class="row">
+                <div class="input-group" style="flex: 1;">
+                    <label>AY</label>
+                    <input type="text" id="month" placeholder="MM" maxlength="2">
+                </div>
+                <div class="input-group" style="flex: 1;">
+                    <label>YIL</label>
+                    <input type="text" id="year" placeholder="YY" maxlength="2">
+                </div>
+                <div class="input-group" style="flex: 120px;">
+                    <label>CVV</label>
+                    <input type="text" id="cvv" placeholder="CVV" maxlength="4">
+                </div>
+            </div>
+
+            <label class="checkbox-group">
+                <input type="checkbox" id="includeCvv" checked>
+                <span>CVV Bilgisi Çıktıya Eklensin</span>
+            </label>
+
+            <div class="input-group">
+                <label>Üretilecek Miktar</label>
+                <input type="number" id="quantity" value="10" min="1" max="1000">
+            </div>
+
+            <button class="btn-generate" onclick="generateCards()">KARTLARI ÜRET</button>
+
+            <div id="output">Sonuçlar burada listelenecek...</div>
+            
+            <div class="action-buttons">
+                <button class="btn-action btn-clear" onclick="clearOutput()">Temizle</button>
+                <button class="btn-action" onclick="copyToClipboard()">Kopyala</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CC CHECKER -->
+    <div id="checker" class="tab-content">
+        <div class="container">
+            <h1>CC CHECKER</h1>
+            <div class="subtitle">Ultra Fast Multi Gate</div>
+            
+            <div class="input-group">
+                <label>Kart Listesi (Format: Kart|Ay|Yıl|Cvv)</label>
+                <textarea id="checkerInput" placeholder="Kart verilerini buraya yapıştırın..." onfocus="showMaintenanceModal()"></textarea>
+            </div>
+
+            <button class="btn-generate" onclick="showMaintenanceModal()">CHECKER'I BAŞLAT</button>
+            
+            <div class="announcement" style="margin-top: 25px; text-align: center; border-left: none; border-right: 4px solid var(--neon-color); border-radius: 16px 0 0 16px;">
+                <h4 style="color: var(--neon-color); font-weight: 800; letter-spacing: 1px;">SİSTEM DURUMU: BAKIMDA</h4>
+                <p>En kararlı gate sistemleri entegre ediliyor. Çok yakında aktif.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- CC BUY -->
+    <div id="buy" class="tab-content">
+        <div class="container">
+            <h1>Venom Satış</h1>
+            <div class="subtitle">Kişiye Özel Premium Live Paketler</div>
+            
+            <div class="shop-grid">
+                <a href="https://t.me/venomsh0" target="_blank" class="shop-item">
+                    <div class="details">
+                        <h3>1x Tr Live</h3>
+                        <p>Anlık Ve Telafili Kesin Teslimat</p>
+                    </div>
+                    <div class="price">200₺</div>
+                </a>
+                
+                <a href="https://t.me/venomsh0" target="_blank" class="shop-item">
+                    <div class="details">
+                        <h3>5x Tr Live</h3>
+                        <p>Anlık Ve Telafili Kesin Teslimat</p>
+                    </div>
+                    <div class="price">700₺</div>
+                </a>
+
+                <a href="https://t.me/venomsh0" target="_blank" class="shop-item">
+                    <div class="details">
+                        <h3>1x YD Live</h3>
+                        <p>Yabancı Yüksek Kalite Live</p>
+                    </div>
+                    <div class="price">300₺</div>
+                </a>
+
+                <a href="https://t.me/venomsh0" target="_blank" class="shop-item">
+                    <div class="details">
+                        <h3>10x Tr </h3>
+                        <p>Minimum 4x Live Çıkış Garantisi</p>
+                    </div>
+                    <div class="price">500₺</div>
+                </a>
+
+                <a href="https://t.me/venomsh0" target="_blank" class="shop-item">
+                    <div class="details">
+                        <h3>20x Tr </h3>
+                        <p>Minimum 8x Live Çıkış Garantisi</p>
+                    </div>
+                    <div class="price">1000₺</div>
+                </a>
+
+                <a href="https://t.me/venomsh0" target="_blank" class="shop-item">
+                    <div class="details">
+                        <h3>JSON & Txt Bulk Satış</h3>
+                        <p>Özel toplu alımlar için doğrudan iletişim</p>
+                    </div>
+                    <div class="price">DM</div>
+                </a>
+            </div>
+
+            <p style="font-size: 11px; color: #4e4e5d; margin-top: 30px; text-transform: uppercase; letter-spacing: 1px;">
+                Tüm işlemler güvencemiz altında sadece resmi adresimiz üzerinden yürütülür.
+            </p>
+        </div>
+    </div>
+
+</div>
+
+<script>
+// --- DIJITAL MATRIX YAGMUR ARKA PLANI ---
+const canvas = document.getElementById('bg-canvas');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+const letters = '01';
+const fontSize = 14;
+let columns = canvas.width / fontSize;
+let drops = Array(Math.floor(columns)).fill(1);
+
+function drawMatrix() {
+    ctx.fillStyle = 'rgba(4, 4, 6, 0.1)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    ctx.fillStyle = '#ff0055'; // Venom Pembesi/Kırmızısı renginde akan datalar
+    ctx.font = fontSize + 'px monospace';
+    
+    for (let i = 0; i < drops.length; i++) {
+        const text = letters.charAt(Math.floor(Math.random() * letters.length));
+        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+        
+        if (drops[i] * fontSize > canvas.height && Math.random() * 0.975 > 0.95) {
+            drops[i] = 0;
+        }
+        drops[i]++;
+    }
+}
+setInterval(drawMatrix, 40);
+
+// --- SAYFA SEKMELERI ---
+function switchTab(tabId, element) {
+    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.menu-item').forEach(item => item.classList.remove('active'));
+    
+    document.getElementById(tabId).classList.add('active');
+    element.classList.add('active');
+}
+
+// --- POPUP MODAL CONTROL ---
+function showMaintenanceModal() {
+    document.getElementById('maintenanceModal').classList.add('show');
+}
+
+function hideMaintenanceModal() {
+    document.getElementById('maintenanceModal').classList.remove('show');
+}
+
+function closeModal(e) {
+    if(e.target.id === 'maintenanceModal') hideMaintenanceModal();
+}
+
+// --- LUHN GENERATOR CODE ---
+function calculateLuhnCheckDigit(partialCard) {
+    let sum = 0;
+    let shouldDouble = true;
+    for (let i = partialCard.length - 1; i >= 0; i--) {
+        let digit = parseInt(partialCard.charAt(i));
+        if (shouldDouble) {
+            digit *= 2;
+            if (digit > 9) digit -= 9;
+        }
+        sum += digit;
+        shouldDouble = !shouldDouble;
+    }
+    let mod = sum % 10;
+    return mod === 0 ? 0 : 10 - mod;
+}
+
+function generateCards() {
+    let binInput = document.getElementById('bin').value.replace(/\s/g, '');
+    if (!binInput) binInput = "400000";
+
+    const qty = parseInt(document.getElementById('quantity').value) || 10;
+    const fMonth = document.getElementById('month').value;
+    const fYear = document.getElementById('year').value;
+    const fCvv = document.getElementById('cvv').value;
+    const isCvvEnabled = document.getElementById('includeCvv').checked;
+    
+    let totalLength = 16;
+    if (binInput.startsWith("34") || binInput.startsWith("37")) totalLength = 15;
+
+    let results = "";
+
+    for (let i = 0; i < qty; i++) {
+        let neededLength = totalLength - binInput.length - 1; 
+        let randomPart = "";
+        for (let j = 0; j < neededLength; j++) {
+            randomPart += Math.floor(Math.random() * 10).toString();
+        }
+        
+        let partialCard = binInput + randomPart;
+        let checkDigit = calculateLuhnCheckDigit(partialCard);
+        let fullCard = partialCard + checkDigit;
+
+        let month = fMonth;
+        if (!month) {
+            month = (Math.floor(Math.random() * 12) + 1).toString().padStart(2, '0');
+        } else {
+            month = month.padStart(2, '0');
+        }
+
+        let year = fYear;
+        if (!year) {
+            year = "31"; // Geleceğe yönelik varsayılan yıl optimize edildi
+        }
+
+        let line = `${fullCard}|${month}|20${year}`;
+
+        if (isCvvEnabled) {
+            let cvv = fCvv;
+            if (!cvv) {
+                cvv = (totalLength === 15) ? Math.floor(Math.random() * 8999 + 1000).toString() : Math.floor(Math.random() * 899 + 100).toString();
+            }
+            line += `|${cvv}`;
+        }
+        results += line + "\n";
+    }
+    document.getElementById('output').innerText = results.trim();
+}
+
+function clearOutput() {
+    document.getElementById('output').innerText = "Sonuçlar burada listelenecek...";
+}
+
+// --- GELISMIS TOAST KOPYALAMA BILDIRIMI ---
+function copyToClipboard() {
+    const text = document.getElementById('output').innerText;
+    if (text === "Sonuçlar burada listelenecek..." || text === "") return;
+    
+    navigator.clipboard.writeText(text).then(() => {
+        const toast = document.getElementById('toastNotification');
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2000);
+    }).catch(err => {
+        alert("Hata Oluştu: " + err);
+    });
+}
+</script>
+
+</body>
+</html>
